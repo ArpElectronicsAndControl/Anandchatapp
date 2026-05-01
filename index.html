@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chat App Pro</title>
     <style>
-        /* UI માં કોઈ ફેરફાર નથી */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e5ddd5; display: flex; justify-content: center; height: 100dvh; overflow: hidden; }
         .chat-container { width: 100%; max-width: 500px; background: #efe7de; display: flex; flex-direction: column; height: 100%; position: relative; }
@@ -23,10 +22,10 @@
         .dropdown-menu div { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; display: flex; align-items: center; gap: 10px; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
+        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; }
         .modal-content h3 { margin-bottom: 15px; color: #075e54; border-bottom: 2px solid #075e54; padding-bottom: 5px; }
         .modal-content label { display: block; margin-top: 10px; font-weight: bold; color: #555; font-size: 13px; }
-        .modal-content input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; outline: none; }
+        .modal-content input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; }
         .modal-btns { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .save-btn { background: #075e54; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
 
@@ -41,6 +40,7 @@
         .replied-content { background: rgba(0,0,0,0.05); border-left: 3px solid #06d755; padding: 4px 8px; border-radius: 4px; margin-bottom: 4px; font-size: 13px; opacity: 0.8; }
         .msg-time { font-size: 10px; color: #667781; text-align: right; margin-top: 4px; display: block; }
         .chat-img { max-width: 100%; border-radius: 5px; display: block; }
+        .audio-msg { display: flex; align-items: center; gap: 8px; min-width: 150px; }
 
         .bottom-bar { background: transparent; display: flex; flex-direction: column; }
         .reply-box-preview { background: white; padding: 8px 15px; border-top: 1px solid #eee; display: none; border-left: 5px solid #075e54; }
@@ -49,6 +49,8 @@
         .icon-btn { font-size: 22px; cursor: pointer; color: #858b8f; padding: 8px; }
         input[type="text"] { flex: 1; border: none; outline: none; padding: 10px 5px; font-size: 16px; background: transparent; }
         .action-btn { background: #00897b; color: white; width: 48px; height: 48px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: none; font-size: 20px; flex-shrink: 0; cursor: pointer; }
+        .recording-active { background: #e91e63 !important; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
         .emoji-menu { position: absolute; bottom: 70px; left: 10px; background: white; border-radius: 10px; padding: 10px; display: none; grid-template-columns: repeat(6, 1fr); gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 20; }
         .attach-menu { position: absolute; bottom: 70px; right: 60px; background: white; border-radius: 15px; display: none; flex-direction: column; padding: 15px; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 20; }
@@ -77,9 +79,10 @@
     <div id="chat-box"></div>
 
     <div class="emoji-menu" id="emojiMenu">
-        <span onclick="addEmoji('😊')">😊</span><span onclick="addEmoji('😂')">😂</span><span onclick="addEmoji('❤️')">❤️</span>
-        <span onclick="addEmoji('👍')">👍</span><span onclick="addEmoji('🙏')">🙏</span><span onclick="addEmoji('😘')">😘</span>
-        <span onclick="addEmoji('🔥')">🔥</span><span onclick="addEmoji('😍')">😍</span><span onclick="addEmoji('🌹')">🌹</span>
+        <span class="emoji-item">😊</span> <span class="emoji-item">😂</span> <span class="emoji-item">❤️</span> 
+        <span class="emoji-item">👍</span> <span class="emoji-item">🙏</span> <span class="emoji-item">😘</span>
+        <span class="emoji-item">🔥</span> <span class="emoji-item">😭</span> <span class="emoji-item">😍</span>
+        <span class="emoji-item">✨</span> <span class="emoji-item">😎</span> <span class="emoji-item">🌹</span>
     </div>
 
     <div class="attach-menu" id="attachMenu">
@@ -105,7 +108,6 @@
     </div>
 </div>
 
-<!-- Settings Modal -->
 <div class="modal" id="settingsModal">
     <div class="modal-content">
         <h3>App Settings</h3>
@@ -152,46 +154,36 @@
     };
 
     let selectedReply = null;
+    let mediaRecorder;
+    let audioChunks = [];
 
     function applyConfig() {
         document.getElementById('displayHeaderName').innerText = config.receiver + " ❤️";
         document.getElementById('displayPic').src = config.pic;
-        setupRealtimeStatus();
+        setupStatus();
     }
 
-    // --- REALTIME ONLINE STATUS LOGIC ---
-    function setupRealtimeStatus() {
+    function setupStatus() {
         const myStatusRef = ref(db, `status/${config.sender}`);
         const otherStatusRef = ref(db, `status/${config.receiver}`);
         const connectedRef = ref(db, '.info/connected');
-
         onValue(connectedRef, (snap) => {
             if (snap.val() === true) {
-                // User is connected - set online
                 set(myStatusRef, { state: 'online', last: serverTimestamp() });
-                // When app closes, set to offline and save current time
                 onDisconnect(myStatusRef).set({ state: 'offline', last: serverTimestamp() });
             }
         });
-
-        // Listen for other person's status
         onValue(otherStatusRef, (s) => {
             const el = document.getElementById('onlineStatus');
             if(s.exists()) {
-                const data = s.val();
-                if(data.state === 'online') {
-                    el.innerText = 'Online';
-                    el.style.color = '#25D366'; // Green for online
-                } else {
-                    const lastSeen = new Date(data.last).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                    el.innerText = `Last seen at ${lastSeen}`;
-                    el.style.color = 'white';
-                }
+                const d = s.val();
+                if(d.state === 'online') { el.innerText = 'Online'; el.style.color = '#25D366'; }
+                else { el.innerText = `Last seen at ${new Date(d.last).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`; el.style.color = 'white'; }
             }
         });
     }
 
-    // Heart Rain Effect
+    // Heart Rain
     setInterval(() => {
         const h = document.createElement('div');
         h.className = 'falling-heart'; h.innerText = '❤️';
@@ -201,8 +193,64 @@
         setTimeout(() => h.remove(), 5000);
     }, 600);
 
-    window.addEmoji = (e) => { document.getElementById('msgInput').value += e; document.getElementById('msgInput').focus(); };
+    // Audio Logic
+    async function startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    push(messagesRef, { sender: config.sender, type: 'audio', content: reader.result, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
+                };
+                reader.readAsDataURL(blob);
+                stream.getTracks().forEach(track => track.stop());
+            };
+            mediaRecorder.start();
+            document.getElementById('sendBtn').classList.add('recording-active');
+        } catch (err) { alert("Mic Permission Denied!"); }
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+            mediaRecorder.stop();
+            document.getElementById('sendBtn').classList.remove('recording-active');
+        }
+    }
+
+    // Send logic
+    document.getElementById('sendBtn').onclick = () => {
+        const text = msgInput.value.trim();
+        if (text) {
+            push(messagesRef, { sender: config.sender, type: 'text', content: text, reply: selectedReply, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
+            fetch(`${config.webhook}?from=${config.sender}&msg=${encodeURIComponent(text)}`).catch(()=>{});
+            msgInput.value = ""; cancelReply();
+            document.getElementById('sendBtn').innerText = '🎤';
+        } else {
+            if (mediaRecorder && mediaRecorder.state === "recording") stopRecording();
+            else startRecording();
+        }
+    };
+
+    // Camera & Gallery Fix
+    document.getElementById('fileInput').onchange = e => handleFile(e.target.files[0]);
+    document.getElementById('camInput').onchange = e => handleFile(e.target.files[0]);
+    
+    function handleFile(file) {
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => push(messagesRef, { sender: config.sender, type: 'image', content: ev.target.result, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
+        reader.readAsDataURL(file);
+    }
+
+    // UI Utilities
+    window.addEmoji = (e) => { msgInput.value += e; msgInput.focus(); document.getElementById('sendBtn').innerText = '➤'; };
     window.cancelReply = () => { selectedReply = null; document.getElementById('replyPreview').style.display = 'none'; };
+    const msgInput = document.getElementById('msgInput');
+    msgInput.oninput = () => document.getElementById('sendBtn').innerText = msgInput.value.trim() ? '➤' : '🎤';
 
     const menuToggle = document.getElementById('menuToggle');
     const dropdown = document.getElementById('dropdown');
@@ -220,38 +268,16 @@
     };
     window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
     window.saveSettings = () => {
-        config = {
-            sender: document.getElementById('setSenderName').value || config.sender,
-            receiver: document.getElementById('setReceiverName').value || config.receiver,
-            pic: document.getElementById('setProfilePic').value || config.pic,
-            webhook: document.getElementById('setWebhook').value || config.webhook
-        };
+        config = { sender: document.getElementById('setSenderName').value, receiver: document.getElementById('setReceiverName').value, pic: document.getElementById('setProfilePic').value, webhook: document.getElementById('setWebhook').value };
         localStorage.setItem('chatConfig', JSON.stringify(config));
         location.reload();
     };
 
     document.getElementById('clearChatAction').onclick = () => {
-        if(confirm("તમે બધી ચેટ હિસ્ટ્રી ડીલીટ કરવા માંગો છો?")) {
-            remove(messagesRef).then(() => {
-                document.getElementById('chat-box').innerHTML = "";
-                dropdown.style.display = 'none';
-            });
-        }
+        if(confirm("ચેટ હિસ્ટ્રી ડીલીટ કરવી છે?")) remove(messagesRef).then(() => { document.getElementById('chat-box').innerHTML = ""; });
     };
 
-    const msgInput = document.getElementById('msgInput');
-    msgInput.oninput = () => document.getElementById('sendBtn').innerText = msgInput.value.trim()?'➤':'🎤';
-
-    const sendMessage = () => {
-        const text = msgInput.value.trim();
-        if(text) {
-            push(messagesRef, { sender: config.sender, type: 'text', content: text, reply: selectedReply, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
-            fetch(`${config.webhook}?from=${config.sender}&msg=${encodeURIComponent(text)}`).catch(()=>{});
-            msgInput.value = ""; cancelReply();
-        }
-    };
-    document.getElementById('sendBtn').onclick = sendMessage;
-
+    // Swipe & Message Rendering
     function enableSwipe(el, msg) {
         let startX = 0;
         el.ontouchstart = (e) => startX = e.touches[0].clientX;
@@ -261,7 +287,7 @@
         };
         el.ontouchend = (e) => {
             if(e.changedTouches[0].clientX - startX > 50) {
-                selectedReply = { text: msg.type==='text'?msg.content:'📸 Photo', user: msg.sender };
+                selectedReply = { text: msg.type==='text'?msg.content: (msg.type==='image'?'📸 Photo':'🎤 Audio'), user: msg.sender };
                 document.getElementById('replyUser').innerText = msg.sender === config.sender ? "You" : msg.sender;
                 document.getElementById('replyTextPreview').innerText = selectedReply.text;
                 document.getElementById('replyPreview').style.display = 'block';
@@ -277,21 +303,15 @@
         d.className = `message ${m.sender === config.sender ? 'sent' : 'received'}`;
         let html = "";
         if(m.reply) html += `<div class="replied-content"><small><b>${m.reply.user}</b></small><br>${m.reply.text}</div>`;
-        html += m.type === 'image' ? `<img src="${m.content}" class="chat-img">` : `<div>${m.content}</div>`;
+        if(m.type === 'image') html += `<img src="${m.content}" class="chat-img">`;
+        else if(m.type === 'audio') html += `<div class="audio-msg">🎵 <audio controls src="${m.content}" style="width:180px;height:30px;"></audio></div>`;
+        else html += `<div>${m.content}</div>`;
         html += `<span class="msg-time">${m.time}</span>`;
         d.innerHTML = html;
         enableSwipe(d, m);
         document.getElementById('chat-box').appendChild(d);
         document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
     });
-
-    document.getElementById('fileInput').onchange = (e) => {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            push(messagesRef, { sender: config.sender, type:'image', content: ev.target.result, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
-        };
-        reader.readAsDataURL(e.target.files[0]);
-    };
 
     applyConfig();
 </script>
