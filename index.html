@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chat App Pro</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e5ddd5; display: flex; justify-content: center; height: 100dvh; overflow: hidden; }
+        .chat-container { width: 100%; max-width: 500px; background: #efe7de; display: flex; flex-direction: column; height: 100%; position: relative; }
+        
+        /* Header */
+        .header { background: #075e54; color: white; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; z-index: 10; height: 65px; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .user-profile { display: flex; align-items: center; gap: 10px; }
+        #displayPic { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 1.5px solid white; background: #eee; }
+        .user-details { display: flex; flex-direction: column; }
+        .user-name { font-size: 17px; font-weight: bold; }
+        .status { font-size: 11px; opacity: 0.9; }
+        
+        /* Dropdown Menu */
+        .menu-container { position: relative; }
+        .three-dots { font-size: 24px; cursor: pointer; padding: 5px 10px; }
+        .dropdown-menu { position: absolute; right: 0; top: 40px; background: white; color: black; box-shadow: 0 2px 10px rgba(0,0,0,0.2); border-radius: 5px; display: none; width: 160px; z-index: 100; }
+        .dropdown-menu div { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+
+        /* Modal Settings */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
+        .modal-content h3 { margin-bottom: 15px; color: #075e54; border-bottom: 2px solid #075e54; padding-bottom: 5px; }
+        .modal-content label { display: block; margin-top: 10px; font-weight: bold; color: #555; font-size: 13px; }
+        .modal-content input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; outline: none; }
+        .modal-btns { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
+        .save-btn { background: #075e54; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+
+        /* Chat Area */
+        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); scroll-behavior: smooth; position: relative; }
+        .falling-heart { position: absolute; top: -20px; color: #ff4d4d; font-size: 18px; z-index: 1; animation: heartFall linear forwards; pointer-events: none; }
+        @keyframes heartFall { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+
+        .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 8px; max-width: 85%; word-wrap: break-word; position: relative; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); z-index: 2; transition: transform 0.2s; }
+        .sent { align-self: flex-end; background: #dcf8c6; border-bottom-right-radius: 2px; }
+        .received { align-self: flex-start; background: white; border-bottom-left-radius: 2px; }
+        
+        .replied-content { background: rgba(0,0,0,0.05); border-left: 3px solid #06d755; padding: 4px 8px; border-radius: 4px; margin-bottom: 4px; font-size: 13px; opacity: 0.8; }
+        .msg-time { font-size: 10px; color: #667781; text-align: right; margin-top: 4px; display: block; }
+        .chat-img { max-width: 100%; border-radius: 5px; display: block; }
+
+        /* Input Area */
+        .bottom-bar { background: transparent; display: flex; flex-direction: column; }
+        .reply-box-preview { background: white; padding: 8px 15px; border-top: 1px solid #eee; display: none; border-left: 5px solid #075e54; }
+        .input-area { padding: 5px 8px 10px 8px; display: flex; align-items: flex-end; gap: 5px; }
+        .input-wrapper { display: flex; align-items: center; background: white; border-radius: 25px; flex: 1; padding: 2px 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        .icon-btn { font-size: 22px; cursor: pointer; color: #858b8f; padding: 8px; }
+        input[type="text"] { flex: 1; border: none; outline: none; padding: 10px 5px; font-size: 16px; background: transparent; }
+        .action-btn { background: #00897b; color: white; width: 48px; height: 48px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: none; font-size: 20px; flex-shrink: 0; cursor: pointer; }
+
+        .emoji-menu { position: absolute; bottom: 70px; left: 10px; background: white; border-radius: 10px; padding: 10px; display: none; grid-template-columns: repeat(6, 1fr); gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 20; }
+        .attach-menu { position: absolute; bottom: 70px; right: 60px; background: white; border-radius: 15px; display: none; flex-direction: column; padding: 15px; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 20; }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="header">
+        <div class="user-profile">
+            <img id="displayPic" src="https://cdn-icons-png.flaticon.com/512/6997/6997662.png">
+            <div class="user-details">
+                <span class="user-name" id="displayHeaderName">લોડિંગ...</span>
+                <span class="status" id="onlineStatus">Connecting...</span>
+            </div>
+        </div>
+        <div class="menu-container">
+            <div class="three-dots" id="menuToggle">⋮</div>
+            <div class="dropdown-menu" id="dropdown">
+                <div id="openSettings">⚙️ Settings</div>
+                <div id="clearChatAction">🗑️ Clear Chat</div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="chat-box"></div>
+
+    <div class="emoji-menu" id="emojiMenu">
+        <span class="emoji-item">😊</span> <span class="emoji-item">😂</span> <span class="emoji-item">❤️</span> 
+        <span class="emoji-item">👍</span> <span class="emoji-item">🙏</span> <span class="emoji-item">😘</span>
+        <span class="emoji-item">🔥</span> <span class="emoji-item">😭</span> <span class="emoji-item">😍</span>
+        <span class="emoji-item">✨</span> <span class="emoji-item">😎</span> <span class="emoji-item">🌹</span>
+    </div>
+
+    <div class="attach-menu" id="attachMenu">
+        <div onclick="document.getElementById('fileInput').click()">🖼️ Gallery</div>
+        <div onclick="document.getElementById('camInput').click()">📷 Camera</div>
+    </div>
+
+    <div class="bottom-bar">
+        <div class="reply-box-preview" id="replyPreview">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div><small id="replyUser" style="color:#075e54; font-weight:bold;"></small><br><span id="replyTextPreview" style="font-size:13px; color:#555;"></span></div>
+                <div onclick="cancelReply()" style="cursor:pointer;">✕</div>
+            </div>
+        </div>
+        <div class="input-area">
+            <div class="input-wrapper">
+                <div class="icon-btn" id="emojiToggle">😊</div>
+                <input type="text" id="msgInput" placeholder="મેસેજ લખો..." autocomplete="off">
+                <div class="icon-btn" style="transform: rotate(45deg);" id="attachToggle">📎</div>
+            </div>
+            <button class="action-btn" id="sendBtn">🎤</button>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal" id="settingsModal">
+    <div class="modal-content">
+        <h3>App Settings</h3>
+        <label>તમારું નામ (Your Name):</label>
+        <input type="text" id="setSenderName" placeholder="Anand">
+        
+        <label>સામેની વ્યક્તિનું નામ (Other Person Name):</label>
+        <input type="text" id="setReceiverName" placeholder="Manisha">
+        
+        <label>પ્રોફાઈલ ફોટો લિંક (Profile URL):</label>
+        <input type="text" id="setProfilePic" placeholder="https://image-link.jpg">
+        
+        <label>Webhook URL (MacroDroid):</label>
+        <input type="text" id="setWebhook" placeholder="https://trigger.macrodroid.com/...">
+        
+        <div class="modal-btns">
+            <button onclick="closeSettings()" style="background:none; border:none; cursor:pointer; color: #666;">Cancel</button>
+            <button class="save-btn" onclick="saveSettings()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<input type="file" id="fileInput" accept="image/*" style="display:none">
+<input type="file" id="camInput" accept="image/*" capture="environment" style="display:none">
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded, remove, onValue, set, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyB4nqUWM_raMKoEXEmpX7KpFAwEm4B6nVU",
+        authDomain: "mychatapp-3bb67.firebaseapp.com",
+        databaseURL: "https://mychatapp-3bb67-default-rtdb.firebaseio.com",
+        projectId: "mychatapp-3bb67",
+        storageBucket: "mychatapp-3bb67.firebasestorage.app",
+        messagingSenderId: "829898694526",
+        appId: "1:829898694526:web:c6265f21e301c93804dd2f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const messagesRef = ref(db, 'chats');
+
+    let config = JSON.parse(localStorage.getItem('chatConfig')) || {
+        sender: "Anand", receiver: "Manisha",
+        pic: "https://cdn-icons-png.flaticon.com/512/6997/6997662.png",
+        webhook: "https://trigger.macrodroid.com/a2a3140a-9ec6-4f81-8086-69ca301b334d/website_alert"
+    };
+
+    let selectedReply = null;
+
+    function applyConfig() {
+        document.getElementById('displayHeaderName').innerText = config.receiver + " ❤️";
+        document.getElementById('displayPic').src = config.pic;
+        setupStatus();
+    }
+
+    function setupStatus() {
+        const myStatusRef = ref(db, `status/${config.sender}`);
+        const otherStatusRef = ref(db, `status/${config.receiver}`);
+        set(myStatusRef, { state: 'online', last: serverTimestamp() });
+        onDisconnect(myStatusRef).set({ state: 'offline', last: serverTimestamp() });
+        onValue(otherStatusRef, (s) => {
+            const el = document.getElementById('onlineStatus');
+            if(s.exists()) {
+                const d = s.val();
+                el.innerText = d.state === 'online' ? 'Online' : `Last seen at ${new Date(d.last).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+            }
+        });
+    }
+
+    // Heart Rain Effect
+    setInterval(() => {
+        const h = document.createElement('div');
+        h.className = 'falling-heart'; h.innerText = '❤️';
+        h.style.left = Math.random() * 95 + '%';
+        h.style.animationDuration = (Math.random() * 3 + 2) + 's';
+        document.getElementById('chat-box').appendChild(h);
+        setTimeout(() => h.remove(), 5000);
+    }, 600);
+
+    // Emoji and UI Logic
+    window.addEmoji = (e) => { document.getElementById('msgInput').value += e; document.getElementById('msgInput').focus(); };
+    window.cancelReply = () => { selectedReply = null; document.getElementById('replyPreview').style.display = 'none'; };
+
+    const menuToggle = document.getElementById('menuToggle');
+    const dropdown = document.getElementById('dropdown');
+    menuToggle.onclick = (e) => { e.stopPropagation(); dropdown.style.display = dropdown.style.display==='block'?'none':'block'; };
+    document.getElementById('emojiToggle').onclick = (e) => { e.stopPropagation(); document.getElementById('emojiMenu').style.display='grid'; };
+    document.getElementById('attachToggle').onclick = (e) => { e.stopPropagation(); document.getElementById('attachMenu').style.display='flex'; };
+    document.onclick = () => { dropdown.style.display='none'; document.getElementById('emojiMenu').style.display='none'; document.getElementById('attachMenu').style.display='none'; };
+
+    // Modal Events
+    document.getElementById('openSettings').onclick = () => {
+        document.getElementById('setSenderName').value = config.sender;
+        document.getElementById('setReceiverName').value = config.receiver;
+        document.getElementById('setProfilePic').value = config.pic;
+        document.getElementById('setWebhook').value = config.webhook;
+        document.getElementById('settingsModal').style.display='flex';
+    };
+    window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
+    window.saveSettings = () => {
+        config = {
+            sender: document.getElementById('setSenderName').value || config.sender,
+            receiver: document.getElementById('setReceiverName').value || config.receiver,
+            pic: document.getElementById('setProfilePic').value || config.pic,
+            webhook: document.getElementById('setWebhook').value || config.webhook
+        };
+        localStorage.setItem('chatConfig', JSON.stringify(config));
+        location.reload();
+    };
+
+    // --- FIX: Clear Chat Logic ---
+    document.getElementById('clearChatAction').onclick = () => {
+        if(confirm("તમે બધી ચેટ હિસ્ટ્રી ડીલીટ કરવા માંગો છો?")) {
+            remove(messagesRef).then(() => {
+                document.getElementById('chat-box').innerHTML = "";
+                dropdown.style.display = 'none';
+            });
+        }
+    };
+
+    // Chat Functions
+    const msgInput = document.getElementById('msgInput');
+    msgInput.oninput = () => document.getElementById('sendBtn').innerText = msgInput.value.trim()?'➤':'🎤';
+
+    const sendMessage = () => {
+        const text = msgInput.value.trim();
+        if(text) {
+            push(messagesRef, { sender: config.sender, type: 'text', content: text, reply: selectedReply, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
+            fetch(`${config.webhook}?from=${config.sender}&msg=${encodeURIComponent(text)}`).catch(()=>{});
+            msgInput.value = ""; cancelReply();
+        }
+    };
+    document.getElementById('sendBtn').onclick = sendMessage;
+
+    // Swipe Logic
+    function enableSwipe(el, msg) {
+        let startX = 0;
+        el.ontouchstart = (e) => startX = e.touches[0].clientX;
+        el.ontouchmove = (e) => {
+            let move = e.touches[0].clientX - startX;
+            if(move > 0 && move < 60) el.style.transform = `translateX(${move}px)`;
+        };
+        el.ontouchend = (e) => {
+            if(e.changedTouches[0].clientX - startX > 50) {
+                selectedReply = { text: msg.type==='text'?msg.content:'📸 Photo', user: msg.sender };
+                document.getElementById('replyUser').innerText = msg.sender === config.sender ? "You" : msg.sender;
+                document.getElementById('replyTextPreview').innerText = selectedReply.text;
+                document.getElementById('replyPreview').style.display = 'block';
+                msgInput.focus();
+            }
+            el.style.transform = 'translateX(0)';
+        };
+    }
+
+    onChildAdded(messagesRef, (s) => {
+        const m = s.val();
+        const d = document.createElement('div');
+        d.className = `message ${m.sender === config.sender ? 'sent' : 'received'}`;
+        let html = "";
+        if(m.reply) html += `<div class="replied-content"><small><b>${m.reply.user}</b></small><br>${m.reply.text}</div>`;
+        html += m.type === 'image' ? `<img src="${m.content}" class="chat-img">` : `<div>${m.content}</div>`;
+        html += `<span class="msg-time">${m.time}</span>`;
+        d.innerHTML = html;
+        enableSwipe(d, m);
+        document.getElementById('chat-box').appendChild(d);
+        document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
+    });
+
+    document.getElementById('fileInput').onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            push(messagesRef, { sender: config.sender, type:'image', content: ev.target.result, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    };
+
+    applyConfig();
+</script>
+</body>
+</html>
