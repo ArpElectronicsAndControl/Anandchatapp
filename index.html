@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chat App Pro</title>
+    <title>Anand ❤️ Message Center</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e5ddd5; display: flex; justify-content: center; height: 100dvh; overflow: hidden; }
@@ -15,45 +19,51 @@
         .user-details { display: flex; flex-direction: column; }
         .user-name { font-size: 17px; font-weight: bold; }
         .status { font-size: 11px; opacity: 0.9; }
-        
-        .menu-container { position: relative; }
+        .online-active { color: #25D366 !important; font-weight: bold; opacity: 1 !important; }
+
         .three-dots { font-size: 24px; cursor: pointer; padding: 5px 10px; }
-        .dropdown-menu { position: absolute; right: 0; top: 40px; background: white; color: black; box-shadow: 0 2px 10px rgba(0,0,0,0.2); border-radius: 5px; display: none; width: 160px; z-index: 100; }
-        .dropdown-menu div { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+        .dropdown-menu { position: absolute; right: 10px; top: 55px; background: white; color: black; box-shadow: 0 2px 10px rgba(0,0,0,0.2); border-radius: 5px; display: none; width: 160px; z-index: 100; }
+        .dropdown-menu div { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; }
-        .modal-content h3 { margin-bottom: 15px; color: #075e54; border-bottom: 2px solid #075e54; padding-bottom: 5px; }
-        .modal-content label { display: block; margin-top: 10px; font-weight: bold; color: #555; font-size: 13px; }
-        .modal-content input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; }
-        .modal-btns { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
-        .save-btn { background: #075e54; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-
-        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); scroll-behavior: smooth; position: relative; }
-        .falling-heart { position: absolute; top: -20px; color: #ff4d4d; font-size: 18px; z-index: 1; animation: heartFall linear forwards; pointer-events: none; }
-        @keyframes heartFall { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
-
-        .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 8px; max-width: 85%; word-wrap: break-word; position: relative; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); z-index: 2; transition: transform 0.2s; }
+        #chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+        
+        .message { margin-bottom: 10px; padding: 8px 12px; border-radius: 8px; max-width: 85%; word-wrap: break-word; font-size: 15px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; cursor: pointer; }
         .sent { align-self: flex-end; background: #dcf8c6; border-bottom-right-radius: 2px; }
         .received { align-self: flex-start; background: white; border-bottom-left-radius: 2px; }
-        
-        .replied-content { background: rgba(0,0,0,0.05); border-left: 3px solid #06d755; padding: 4px 8px; border-radius: 4px; margin-bottom: 4px; font-size: 13px; opacity: 0.8; }
         .msg-time { font-size: 10px; color: #667781; text-align: right; margin-top: 4px; display: block; }
-        .chat-img { max-width: 100%; border-radius: 5px; display: block; }
-        .audio-msg { display: flex; align-items: center; gap: 8px; min-width: 150px; }
+        .chat-img { max-width: 100%; border-radius: 5px; display: block; margin-top: 5px; background: #eee; min-height: 100px; }
 
-        .bottom-bar { background: transparent; display: flex; flex-direction: column; }
-        .reply-box-preview { background: white; padding: 8px 15px; border-top: 1px solid #eee; display: none; border-left: 5px solid #075e54; }
-        .input-area { padding: 5px 8px 10px 8px; display: flex; align-items: flex-end; gap: 5px; }
+        .reply-container { background: rgba(0,0,0,0.05); border-left: 4px solid #075e54; padding: 5px 10px; margin-bottom: 5px; border-radius: 4px; font-size: 13px; color: #555; }
+        .reply-preview { display: none; background: #eee; padding: 8px; border-left: 4px solid #075e54; position: relative; }
+        .reply-preview span { display: block; font-size: 12px; font-weight: bold; color: #075e54; }
+        .close-reply { position: absolute; right: 5px; top: 5px; cursor: pointer; font-weight: bold; }
+
+        .emoji-menu { position: absolute; bottom: 70px; left: 10px; background: white; border-radius: 10px; padding: 10px; display: none; grid-template-columns: repeat(6, 1fr); gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 20; }
+        .emoji-item { cursor: pointer; font-size: 24px; text-align: center; padding: 5px; }
+
+        .attach-menu { position: absolute; bottom: 70px; right: 60px; background: white; border-radius: 15px; padding: 15px; display: none; grid-template-columns: repeat(2, 1fr); gap: 20px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 20; }
+        .attach-item { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; font-size: 12px; }
+        .attach-icon { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; }
+
+        .bottom-bar { background: transparent; padding: 5px 8px 10px 8px; display: flex; flex-direction: column; gap: 0; }
+        .input-area-row { display: flex; align-items: flex-end; gap: 5px; width: 100%; }
         .input-wrapper { display: flex; align-items: center; background: white; border-radius: 25px; flex: 1; padding: 2px 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
         .icon-btn { font-size: 22px; cursor: pointer; color: #858b8f; padding: 8px; }
         input[type="text"] { flex: 1; border: none; outline: none; padding: 10px 5px; font-size: 16px; background: transparent; }
-        .action-btn { background: #00897b; color: white; width: 48px; height: 48px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: none; font-size: 20px; flex-shrink: 0; cursor: pointer; }
-        .recording-active { background: #e91e63 !important; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .action-btn { background: #00897b; color: white; width: 48px; height: 48px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: none; font-size: 20px; cursor: pointer; flex-shrink: 0; }
 
-        .emoji-menu { position: absolute; bottom: 70px; left: 10px; background: white; border-radius: 10px; padding: 10px; display: none; grid-template-columns: repeat(6, 1fr); gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 20; }
-        .attach-menu { position: absolute; bottom: 70px; right: 60px; background: white; border-radius: 15px; display: none; flex-direction: column; padding: 15px; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 20; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { color: #075e54; border-bottom: 2px solid #075e54; margin-bottom: 20px; padding-bottom: 5px; font-size: 1.2rem; }
+        #myCurrentPhoto { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #075e54; display: block; margin: 0 auto 20px auto; background: #eee; }
+        .setting-group { margin-bottom: 15px; }
+        .setting-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; font-size: 14px; }
+        .setting-group input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; background: #f9f9f9; }
+        .modal-footer { margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-footer button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-cancel { background: #eee; color: #333; }
+        .btn-save { background: #075e54; color: white; }
+        #cropper-container { display: none; margin-top: 15px; padding: 10px; border: 1px dashed #075e54; }
     </style>
 </head>
 <body>
@@ -61,9 +71,9 @@
 <div class="chat-container">
     <div class="header">
         <div class="user-profile">
-            <img id="displayPic" src="">
+            <img id="displayPic" src="https://cdn-icons-png.flaticon.com/512/6997/6997662.png">
             <div class="user-details">
-                <span class="user-name" id="displayHeaderName">લોડિંગ...</span>
+                <span class="user-name" id="displayHeaderName">Manisha ❤️</span>
                 <span class="status" id="onlineStatus">Connecting...</span>
             </div>
         </div>
@@ -79,66 +89,72 @@
     <div id="chat-box"></div>
 
     <div class="emoji-menu" id="emojiMenu">
-        <span class="emoji-item">😊</span> <span class="emoji-item">😂</span> <span class="emoji-item">❤️</span> 
-        <span class="emoji-item">👍</span> <span class="emoji-item">🙏</span> <span class="emoji-item">😘</span>
-        <span class="emoji-item">🔥</span> <span class="emoji-item">😭</span> <span class="emoji-item">😍</span>
-        <span class="emoji-item">✨</span> <span class="emoji-item">😎</span> <span class="emoji-item">🌹</span>
+        <span class="emoji-item">😊</span><span class="emoji-item">😂</span><span class="emoji-item">❤️</span><span class="emoji-item">👍</span><span class="emoji-item">🙏</span><span class="emoji-item">😘</span>
+        <span class="emoji-item">🔥</span><span class="emoji-item">😭</span><span class="emoji-item">😍</span><span class="emoji-item">✨</span><span class="emoji-item">😎</span><span class="emoji-item">🌹</span>
     </div>
 
     <div class="attach-menu" id="attachMenu">
-        <div onclick="document.getElementById('fileInput').click()">🖼️ Gallery</div>
-        <div onclick="document.getElementById('camInput').click()">📷 Camera</div>
+        <div class="attach-item" onclick="document.getElementById('camInput').click()">
+            <div class="attach-icon" style="background: #ec407a;">📷</div><span>Camera</span>
+        </div>
+        <div class="attach-item" onclick="document.getElementById('fileInput').click()">
+            <div class="attach-icon" style="background: #ab47bc;">🖼️</div><span>Gallery</span>
+        </div>
     </div>
 
     <div class="bottom-bar">
-        <div class="reply-box-preview" id="replyPreview">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div><small id="replyUser" style="color:#075e54; font-weight:bold;"></small><br><span id="replyTextPreview" style="font-size:13px; color:#555;"></span></div>
-                <div onclick="cancelReply()" style="cursor:pointer;">✕</div>
-            </div>
+        <div class="reply-preview" id="replyPreview">
+            <span id="replyToName">Name</span>
+            <div id="replyToText">Message...</div>
+            <div class="close-reply" onclick="cancelReply()">✕</div>
         </div>
-        <div class="input-area">
+
+        <div class="input-area-row">
             <div class="input-wrapper">
                 <div class="icon-btn" id="emojiToggle">😊</div>
                 <input type="text" id="msgInput" placeholder="મેસેજ લખો..." autocomplete="off">
-                <div class="icon-btn" style="transform: rotate(45deg);" id="attachToggle">📎</div>
+                <div class="icon-btn" id="attachToggle" style="transform: rotate(45deg);">📎</div>
             </div>
-            <button class="action-btn" id="sendBtn">🎤</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal" id="settingsModal">
-    <div class="modal-content">
-        <h3>App Settings</h3>
-        <label>તમારું નામ (Your Name):</label>
-        <input type="text" id="setSenderName" placeholder="Anand">
-        <label>સામેની વ્યક્તિનું નામ (Other Person Name):</label>
-        <input type="text" id="setReceiverName" placeholder="Manisha">
-        <label>પ્રોફાઈલ ફોટો લિંક (Profile URL):</label>
-        <input type="text" id="setProfilePic" placeholder="https://image-link.jpg">
-        <label>Webhook URL (MacroDroid):</label>
-        <input type="text" id="setWebhook" placeholder="https://trigger.macrodroid.com/...">
-        <div class="modal-btns">
-            <button onclick="closeSettings()" style="background:none; border:none; cursor:pointer; color: #666;">Cancel</button>
-            <button class="save-btn" onclick="saveSettings()">Save Changes</button>
+            <button class="action-btn" id="actionBtn">🎙️</button>
         </div>
     </div>
 </div>
 
 <input type="file" id="fileInput" accept="image/*" style="display:none">
-<input type="file" id="camInput" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="camInput" accept="image/*" capture="camera" style="display:none">
+
+<div class="modal" id="settingsModal">
+    <div class="modal-content">
+        <div class="modal-header">Settings</div>
+        <img id="myCurrentPhoto" src="">
+        <div class="setting-group"><label>Sender Name (My Name):</label><input type="text" id="setSenderName"></div>
+        <div class="setting-group"><label>Receiver Name (Partner Name):</label><input type="text" id="setReceiverName"></div>
+        <div class="setting-group">
+            <label>My Profile Pic:</label>
+            <input type="file" id="profileFile" accept="image/*">
+            <div id="cropper-container">
+                <div id="crop-resizer"></div>
+                <button id="cropBtn" style="width:100%; background:#128c7e; color:white; padding:8px; border:none; border-radius:5px; margin-top:10px;">Confirm Photo</button>
+            </div>
+        </div>
+        <div class="setting-group"><label>My Webhook URL:</label><input type="text" id="setWebhook"></div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="document.getElementById('settingsModal').style.display='none'">Cancel</button>
+            <button class="btn-save" id="saveSettingsBtn">Save</button>
+        </div>
+    </div>
+</div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded, remove, onValue, set, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, push, onChildAdded, remove, onValue, update, onDisconnect } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyB4nqUWM_raMKoEXEmpX7KpFAwEm4B6nVU",
         authDomain: "mychatapp-3bb67.firebaseapp.com",
         databaseURL: "https://mychatapp-3bb67-default-rtdb.firebaseio.com",
         projectId: "mychatapp-3bb67",
-        storageBucket: "mychatapp-3bb67.firebasestorage.app",
+        storageBucket: "mychatapp-3bb67.appspot.com",
         messagingSenderId: "829898694526",
         appId: "1:829898694526:web:c6265f21e301c93804dd2f"
     };
@@ -147,173 +163,208 @@
     const db = getDatabase(app);
     const messagesRef = ref(db, 'chats');
 
-    let config = JSON.parse(localStorage.getItem('chatConfig')) || {
-        sender: "Anand", receiver: "Manisha",
-        pic: "https://cdn-icons-png.flaticon.com/512/6997/6997662.png",
-        webhook: "https://trigger.macrodroid.com/a2a3140a-9ec6-4f81-8086-69ca301b334d/website_alert"
-    };
-
-    let selectedReply = null;
+    let config = JSON.parse(localStorage.getItem('chatConfig')) || { sender: "Anand", receiver: "Manisha", pic: "https://cdn-icons-png.flaticon.com/512/6997/6997662.png", webhook: "" };
+    let tempPicUrl = config.pic;
+    let croppieInstance = null;
     let mediaRecorder;
     let audioChunks = [];
+    let replyingTo = null;
 
-    function applyConfig() {
-        document.getElementById('displayHeaderName').innerText = config.receiver + " ❤️";
-        document.getElementById('displayPic').src = config.pic;
-        setupStatus();
+    // નવું ટાઈમ ફોર્મેટ ફંક્શન (AM/PM માટે)
+    function getTimeFormatted() {
+        return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
     }
 
-    function setupStatus() {
+    window.cancelReply = () => {
+        replyingTo = null;
+        document.getElementById('replyPreview').style.display = 'none';
+    };
+
+    function init() {
+        document.getElementById('displayHeaderName').innerText = config.receiver + " ❤️";
+        document.getElementById('myCurrentPhoto').src = config.pic;
         const myStatusRef = ref(db, `status/${config.sender}`);
         const otherStatusRef = ref(db, `status/${config.receiver}`);
-        const connectedRef = ref(db, '.info/connected');
-        onValue(connectedRef, (snap) => {
-            if (snap.val() === true) {
-                set(myStatusRef, { state: 'online', last: serverTimestamp() });
-                onDisconnect(myStatusRef).set({ state: 'offline', last: serverTimestamp() });
+        
+        onValue(ref(db, '.info/connected'), (snap) => {
+            if (snap.val()) {
+                update(myStatusRef, { state: 'online', photo: config.pic });
+                // અહીં ઓનલાઇન સ્ટેટસ માં AM/PM ફોર્મેટ સેટ કર્યું
+                onDisconnect(myStatusRef).update({ state: 'offline', last_seen: getTimeFormatted() });
             }
         });
+
         onValue(otherStatusRef, (s) => {
-            const el = document.getElementById('onlineStatus');
-            if(s.exists()) {
+            if(s.exists()){
                 const d = s.val();
-                if(d.state === 'online') { el.innerText = 'Online'; el.style.color = '#25D366'; }
-                else { el.innerText = `Last seen at ${new Date(d.last).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`; el.style.color = 'white'; }
+                const statusEl = document.getElementById('onlineStatus');
+                if (d.state === 'online') {
+                    statusEl.innerText = 'Online';
+                    statusEl.classList.add('online-active');
+                } else {
+                    statusEl.innerText = `Last seen at ${d.last_seen || "recently"}`;
+                    statusEl.classList.remove('online-active');
+                }
+                if(d.photo) document.getElementById('displayPic').src = d.photo;
             }
         });
     }
 
-    // Heart Rain
-    setInterval(() => {
-        const h = document.createElement('div');
-        h.className = 'falling-heart'; h.innerText = '❤️';
-        h.style.left = Math.random() * 95 + '%';
-        h.style.animationDuration = (Math.random() * 3 + 2) + 's';
-        document.getElementById('chat-box').appendChild(h);
-        setTimeout(() => h.remove(), 5000);
-    }, 600);
-
-    // Audio Logic
-    async function startRecording() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    push(messagesRef, { sender: config.sender, type: 'audio', content: reader.result, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
-                };
-                reader.readAsDataURL(blob);
-                stream.getTracks().forEach(track => track.stop());
+    function compressAndSend(file) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const maxWidth = 600; 
+                const scale = maxWidth / img.width;
+                canvas.width = maxWidth;
+                canvas.height = img.height * scale;
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
+                sendMsg('image', compressedBase64);
             };
-            mediaRecorder.start();
-            document.getElementById('sendBtn').classList.add('recording-active');
-        } catch (err) { alert("Mic Permission Denied!"); }
+        };
     }
 
-    function stopRecording() {
-        if (mediaRecorder && mediaRecorder.state === "recording") {
-            mediaRecorder.stop();
-            document.getElementById('sendBtn').classList.remove('recording-active');
-        }
-    }
+    const msgInput = document.getElementById('msgInput');
+    const actionBtn = document.getElementById('actionBtn');
 
-    // Send logic
-    document.getElementById('sendBtn').onclick = () => {
-        const text = msgInput.value.trim();
-        if (text) {
-            push(messagesRef, { sender: config.sender, type: 'text', content: text, reply: selectedReply, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
-            fetch(`${config.webhook}?from=${config.sender}&msg=${encodeURIComponent(text)}`).catch(()=>{});
-            msgInput.value = ""; cancelReply();
-            document.getElementById('sendBtn').innerText = '🎤';
+    msgInput.oninput = () => { actionBtn.innerHTML = msgInput.value.trim() ? "➤" : "🎙️"; };
+
+    actionBtn.onclick = () => {
+        if (msgInput.value.trim()) {
+            sendMsg('text', msgInput.value.trim());
+            msgInput.value = "";
+            actionBtn.innerHTML = "🎙️";
+            cancelReply();
         } else {
-            if (mediaRecorder && mediaRecorder.state === "recording") stopRecording();
-            else startRecording();
+            handleVoice();
         }
     };
 
-    // Camera & Gallery Fix
-    document.getElementById('fileInput').onchange = e => handleFile(e.target.files[0]);
-    document.getElementById('camInput').onchange = e => handleFile(e.target.files[0]);
-    
-    function handleFile(file) {
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => push(messagesRef, { sender: config.sender, type: 'image', content: ev.target.result, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });
-        reader.readAsDataURL(file);
+    function sendMsg(type, content) {
+        const msgData = { 
+            sender: config.sender, 
+            type, 
+            content, 
+            time: getTimeFormatted() // મેસેજ માં પણ AM/PM ફોર્મેટ
+        };
+        if (replyingTo) msgData.replyTo = replyingTo;
+        push(messagesRef, msgData);
+        if(config.webhook && type === 'text') fetch(`${config.webhook}?from=${config.sender}&msg=${encodeURIComponent(content)}`).catch(()=>{});
     }
 
-    // UI Utilities
-    window.addEmoji = (e) => { msgInput.value += e; msgInput.focus(); document.getElementById('sendBtn').innerText = '➤'; };
-    window.cancelReply = () => { selectedReply = null; document.getElementById('replyPreview').style.display = 'none'; };
-    const msgInput = document.getElementById('msgInput');
-    msgInput.oninput = () => document.getElementById('sendBtn').innerText = msgInput.value.trim() ? '➤' : '🎤';
+    async function handleVoice() {
+        if (!mediaRecorder || mediaRecorder.state === "inactive") {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.onload = e => sendMsg('audio', e.target.result);
+                    reader.readAsDataURL(blob);
+                    audioChunks = [];
+                };
+                mediaRecorder.start();
+                actionBtn.style.background = "red";
+            } catch (e) { alert("Mic permission denied."); }
+        } else {
+            mediaRecorder.stop();
+            actionBtn.style.background = "#00897b";
+        }
+    }
 
-    const menuToggle = document.getElementById('menuToggle');
-    const dropdown = document.getElementById('dropdown');
-    menuToggle.onclick = (e) => { e.stopPropagation(); dropdown.style.display = dropdown.style.display==='block'?'none':'block'; };
-    document.getElementById('emojiToggle').onclick = (e) => { e.stopPropagation(); document.getElementById('emojiMenu').style.display='grid'; };
-    document.getElementById('attachToggle').onclick = (e) => { e.stopPropagation(); document.getElementById('attachMenu').style.display='flex'; };
-    document.onclick = () => { dropdown.style.display='none'; document.getElementById('emojiMenu').style.display='none'; document.getElementById('attachMenu').style.display='none'; };
+    [document.getElementById('fileInput'), document.getElementById('camInput')].forEach(el => {
+        el.onchange = e => {
+            const file = e.target.files[0];
+            if (file) compressAndSend(file);
+            document.getElementById('attachMenu').style.display = 'none';
+        };
+    });
 
+    document.querySelectorAll('.emoji-item').forEach(e => {
+        e.onclick = (event) => {
+            event.stopPropagation();
+            msgInput.value += e.innerText;
+            msgInput.focus();
+            actionBtn.innerHTML = "➤";
+        };
+    });
+
+    document.getElementById('profileFile').onchange = e => {
+        const reader = new FileReader();
+        reader.onload = event => {
+            document.getElementById('cropper-container').style.display = 'block';
+            if (croppieInstance) croppieInstance.destroy();
+            croppieInstance = new Croppie(document.getElementById('crop-resizer'), { viewport: { width: 150, height: 150, type: 'circle' }, boundary: { width: 250, height: 250 } });
+            croppieInstance.bind({ url: event.target.result });
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    };
+
+    document.getElementById('cropBtn').onclick = async () => {
+        tempPicUrl = await croppieInstance.result({ type: 'base64', size: 'viewport', format: 'jpeg' });
+        document.getElementById('myCurrentPhoto').src = tempPicUrl;
+        document.getElementById('cropper-container').style.display = 'none';
+    };
+
+    document.getElementById('saveSettingsBtn').onclick = () => {
+        config = { sender: document.getElementById('setSenderName').value, receiver: document.getElementById('setReceiverName').value, webhook: document.getElementById('setWebhook').value, pic: tempPicUrl };
+        localStorage.setItem('chatConfig', JSON.stringify(config));
+        update(ref(db, `status/${config.sender}`), { photo: tempPicUrl }).then(() => location.reload());
+    };
+
+    document.getElementById('menuToggle').onclick = e => { e.stopPropagation(); dropdown.style.display = dropdown.style.display==='block'?'none':'block'; };
+    document.getElementById('emojiToggle').onclick = e => { e.stopPropagation(); emojiMenu.style.display = emojiMenu.style.display==='grid'?'none':'grid'; };
+    document.getElementById('attachToggle').onclick = e => { e.stopPropagation(); attachMenu.style.display = attachMenu.style.display==='grid'?'none':'grid'; };
     document.getElementById('openSettings').onclick = () => {
         document.getElementById('setSenderName').value = config.sender;
         document.getElementById('setReceiverName').value = config.receiver;
-        document.getElementById('setProfilePic').value = config.pic;
         document.getElementById('setWebhook').value = config.webhook;
-        document.getElementById('settingsModal').style.display='flex';
+        document.getElementById('myCurrentPhoto').src = config.pic;
+        document.getElementById('settingsModal').style.display = 'flex';
     };
-    window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
-    window.saveSettings = () => {
-        config = { sender: document.getElementById('setSenderName').value, receiver: document.getElementById('setReceiverName').value, pic: document.getElementById('setProfilePic').value, webhook: document.getElementById('setWebhook').value };
-        localStorage.setItem('chatConfig', JSON.stringify(config));
-        location.reload();
-    };
+    document.getElementById('clearChatAction').onclick = () => { if(confirm("બધું સાફ કરવું છે?")) remove(messagesRef).then(()=>location.reload()); };
+    document.onclick = () => { dropdown.style.display='none'; emojiMenu.style.display='none'; attachMenu.style.display='none'; };
 
-    document.getElementById('clearChatAction').onclick = () => {
-        if(confirm("ચેટ હિસ્ટ્રી ડીલીટ કરવી છે?")) remove(messagesRef).then(() => { document.getElementById('chat-box').innerHTML = ""; });
-    };
-
-    // Swipe & Message Rendering
-    function enableSwipe(el, msg) {
-        let startX = 0;
-        el.ontouchstart = (e) => startX = e.touches[0].clientX;
-        el.ontouchmove = (e) => {
-            let move = e.touches[0].clientX - startX;
-            if(move > 0 && move < 60) el.style.transform = `translateX(${move}px)`;
-        };
-        el.ontouchend = (e) => {
-            if(e.changedTouches[0].clientX - startX > 50) {
-                selectedReply = { text: msg.type==='text'?msg.content: (msg.type==='image'?'📸 Photo':'🎤 Audio'), user: msg.sender };
-                document.getElementById('replyUser').innerText = msg.sender === config.sender ? "You" : msg.sender;
-                document.getElementById('replyTextPreview').innerText = selectedReply.text;
-                document.getElementById('replyPreview').style.display = 'block';
-                msgInput.focus();
-            }
-            el.style.transform = 'translateX(0)';
-        };
-    }
-
-    onChildAdded(messagesRef, (s) => {
+    onChildAdded(messagesRef, s => {
         const m = s.val();
-        const d = document.createElement('div');
-        d.className = `message ${m.sender === config.sender ? 'sent' : 'received'}`;
-        let html = "";
-        if(m.reply) html += `<div class="replied-content"><small><b>${m.reply.user}</b></small><br>${m.reply.text}</div>`;
-        if(m.type === 'image') html += `<img src="${m.content}" class="chat-img">`;
-        else if(m.type === 'audio') html += `<div class="audio-msg">🎵 <audio controls src="${m.content}" style="width:180px;height:30px;"></audio></div>`;
-        else html += `<div>${m.content}</div>`;
-        html += `<span class="msg-time">${m.time}</span>`;
-        d.innerHTML = html;
-        enableSwipe(d, m);
-        document.getElementById('chat-box').appendChild(d);
+        const div = document.createElement('div');
+        div.className = `message ${m.sender === config.sender ? 'sent' : 'received'}`;
+        
+        let replyHtml = '';
+        if (m.replyTo) {
+            const displayName = m.replyTo.sender === config.sender ? "You" : m.replyTo.sender;
+            replyHtml = `<div class="reply-container"><strong>${displayName}</strong><br>${m.replyTo.content.substring(0, 50)}</div>`;
+        }
+
+        if (m.type === 'image') div.innerHTML = `${replyHtml}<img src="${m.content}" class="chat-img" loading="lazy" decoding="async">`;
+        else if (m.type === 'audio') div.innerHTML = `${replyHtml}<audio controls src="${m.content}" style="width:200px;"></audio>`;
+        else div.innerHTML = `${replyHtml}<div>${m.content}</div>`;
+        
+        div.innerHTML += `<span class="msg-time">${m.time}</span>`;
+
+        div.onclick = () => {
+            replyingTo = { sender: m.sender, content: m.type === 'text' ? m.content : `[${m.type}]` };
+            document.getElementById('replyToName').innerText = m.sender === config.sender ? "You" : m.sender;
+            document.getElementById('replyToText').innerText = replyingTo.content;
+            document.getElementById('replyPreview').style.display = 'block';
+            msgInput.focus();
+        };
+
+        document.getElementById('chat-box').appendChild(div);
         document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
     });
 
-    applyConfig();
+    init();
 </script>
 </body>
 </html>
